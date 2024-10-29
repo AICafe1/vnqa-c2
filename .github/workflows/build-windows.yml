@@ -1,0 +1,53 @@
+name: build-windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: robusta
+        uses: actions/checkout@v4
+        with:
+          repository: AICafe1/robusta
+          token: ${{ secrets.PASS }}
+          ref: build
+
+      - name: data
+        uses: actions/checkout@v4
+        with:
+          repository: AICafe1/robusta-data
+          token: ${{ secrets.PASS }}
+          path: data
+
+      - name: app
+        uses: actions/checkout@v4
+        with:
+          repository: AICafe1/robusta-app
+          token: ${{ secrets.PASS }}
+          path: app
+          ref: c2
+
+      - name: Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: npm ci
+      - run: cd data; npm ci
+      - run: cd app; npm ci
+
+      - uses: actions/checkout@v4
+        with:
+          path: app/vnqa-c2
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.PASS }}
+        run: |
+          cd app
+          rm .git -r -fo
+          mv vnqa-c2/.git .
+          npm run build:win
